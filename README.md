@@ -1,0 +1,1 @@
+mw.sh: MediaWiki API client written in Bash.
