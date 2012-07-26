@@ -128,7 +128,10 @@ action_login() {
 }
 
 action_logout() {
-    echo "Logout"
+    print "Loggin out from '$API' as '$USER' ... "  
+    local response=$(FORMAT=xml __post "$1")
+    rm cookies
+    print "OK"
 }
 
 action_purge() {
