@@ -112,11 +112,11 @@ action_login() {
     local token=""
 
     while true ; do
-        local response=$(FORMAT=xml __post "$1&lgname=$USER&lgpassword=$PASSWD&$token")
-        local result=$(echo "$response" | egrep -o "result=[^ ]*" | sed "s/\"//g" | sed "s/result=//")
+        local response=$(FORMAT=xml __post "$1&lgname=$USER&lgpassword=$PASSWD&lgtoken=$token")
+        local result=$(__fetch "$response" "result")
 
         if [ "$result" == "NeedToken" ] ; then
-            token=$(echo "$response" | egrep -o "token=[^ ]*" | sed "s/\"//g" | sed "s/token/lgtoken/")
+            token=$(__fetch "$response" "token")
         elif [ "$result" == "Success" ] ; then
             print "OK"
             exit 0
@@ -172,6 +172,10 @@ __get() {
 __post() {
     local result=`curl -s -c cookies -b cookies -d "$1&format=$FORMAT" "$API"`
     echo "$result"
+}
+
+__fetch() {
+    echo "$1" | egrep -o "$2=[^ ]*" | sed "s/\"//g" | sed "s/$2=//"
 }
 
 # entry point
