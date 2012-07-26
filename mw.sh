@@ -109,20 +109,22 @@ action_login() {
 
     print "Logging in to '$API' as '$USER' ... "
 
-    local token=$(FORMAT=xml __post "$1&lgname=$USER&lgpassword=$PASSWD")
-    echo "$token"
-    echo
-    token=$(echo "$token" | egrep -o "token=[^ ]*" | sed "s/\"//g" | sed "s/token/lgtoken/")
-    echo "$1&lgname=$USER&lgpassword=$PASSWD&$token"
-    echo
-    local token=$(FORMAT=xml __post "$1&lgname=$USER&lgpassword=$PASSWD&$token")
-    echo $token
-    echo
-    token=$(echo "$token" | egrep -o "token=[^ ]*" | sed "s/\"//g" | sed "s/token/lgtoken/")
-    echo "$1&lgname=$USER&lgpassword=$PASSWD&$token"
-    echo
-    local token=$(FORMAT=xml __post "$1&lgname=$USER&lgpassword=$PASSWD&$token")
-    echo "$token"
+    local token=""
+
+    while true ; do
+        local response=$(FORMAT=xml __post "$1&lgname=$USER&lgpassword=$PASSWD&$token")
+        local result=$(echo "$response" | egrep -o "result=[^ ]*" | sed "s/\"//g" | sed "s/result=//")
+
+        if [ "$result" == "NeedToken" ] ; then
+            token=$(echo "$response" | egrep -o "token=[^ ]*" | sed "s/\"//g" | sed "s/token/lgtoken/")
+        elif [ "$result" == "Success" ] ; then
+            print "OK"
+            exit 0
+        else 
+            print "$result"
+            exit 1
+        fi
+    done
 }
 
 action_logout() {
@@ -165,7 +167,7 @@ __get() {
 }
 
 __post() {
-    local result=`curl -s -d "$1&format=$FORMAT" "$API"`
+    local result=`curl -s -c cookies -b cookies -d "$1&format=$FORMAT" "$API"`
     echo "$result"
 }
 
