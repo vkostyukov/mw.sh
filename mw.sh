@@ -33,7 +33,7 @@ main() {
     fi
 
     local action="$1" ; shift 
-    local request="action=$action"
+    local request=""
 
     while [ $# -gt 0 ]
     do
@@ -55,8 +55,8 @@ main() {
     if [ `type -t action_$action`"" == "function" ] ; then
         action_"$action" "$request"
     else
-        print "Performing custom request '$request'... "
-        local data=$(__get "$request")
+        print "Performing custom request 'action=$action$request'... "
+        local data=$(__get "action=$action$request")
         echo "$data"
     fi
 }
@@ -86,14 +86,14 @@ action_help() {
     echo "    edit      Creates/edites a page"
     echo "    upload    Uploads a file to MediaWiki"
     echo "    import    Imports data to MediaWiki"
-    echo "    watch     Adds/removes pages to/from watchlist"
+    echo "    watch     Adds page to watchlist"
+    echo "    unwatch   Removes pages from watchlist"
     echo "    help      Shows help information"
     echo
     echo "Try '$MWSH_NAME <action> help' for action information."
 }
 
 action_test() {
-
     print "Testing connection to '$API' ... "
     local data=$(__get)
     if [ -z "$data" ] ; then
@@ -102,17 +102,15 @@ action_test() {
     else
         print "OK"
     fi
-
 }
 
 action_login() {
-
     print "Logging in to '$API' as '$USER' ... "
 
     local token=""
 
     while true ; do
-        local response=$(FORMAT=xml __post "$1&lgname=$USER&lgpassword=$PASSWD&lgtoken=$token")
+        local response=$(FORMAT=xml __post "action=login&lgname=$USER&lgpassword=$PASSWD&lgtoken=$token")
         local result=$(__fetch "$response" "result")
 
         if [ "$result" == "NeedToken" ] ; then
@@ -129,7 +127,7 @@ action_login() {
 
 action_logout() {
     print "Loggin out from '$API' as '$USER' ... "  
-    local response=$(FORMAT=xml __post "$1")
+    local trash=$(FORMAT=xml __post "$1")
     rm cookies
     print "OK"
 }
@@ -159,7 +157,28 @@ action_import() {
 }
 
 action_watch() {
-    echo "Watch"
+    local title=$(__arg "$1" "title")
+
+    print "Watching wiki page '$title' ... "
+
+    local response=$(FORMAT=xml __post "action=query&prop=info&intoken=watch&titles=$title")
+    local token=$(__fetch "$response" "watchtoken" | sed "s/+/%2B/g")
+    local trash=$(FORMAT=xml __post "action=watch&title=$title&token=$token")
+
+    print "OK" 
+}
+
+# DRY broken
+action_unwatch() {
+    local title=$(__arg "$1" "title")
+
+    print "Unwatching wiki page '$title' ... "
+
+    local response=$(FORMAT=xml __post "action=query&prop=info&intoken=watch&titles=$title")
+    local token=$(__fetch "$response" "watchtoken" | sed "s/+/%2B/g")
+    local trash=$(FORMAT=xml __post "action=watch&title=$title&token=$token&unwatch")
+
+    print "OK" 
 }
 
 # routines
@@ -176,6 +195,10 @@ __post() {
 
 __fetch() {
     echo "$1" | egrep -o "$2=[^ ]*" | sed "s/\"//g" | sed "s/$2=//"
+}
+
+__arg() {
+    echo "$1" | egrep -o "$2=[^&]*" | sed "s/$2=//"
 }
 
 # entry point
