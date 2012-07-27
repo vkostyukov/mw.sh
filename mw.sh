@@ -176,7 +176,7 @@ action_unwatch() {
 
     local response=$(FORMAT=xml __post "action=query&prop=info&intoken=watch&titles=$title")
     local token=$(__fetch "$response" "watchtoken" | sed "s/+/%2B/g")
-    local trash=$(FORMAT=xml __post "action=watch&title=$title&token=$token&unwatch")
+    local trash=$(FORMAT=xml __post "action=watch&title=$title&unwatch=true&token=$token")
 
     print "OK" 
 }
