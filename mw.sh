@@ -190,15 +190,20 @@ action_email() {
     local response=$(FORMAT=xml __post "action=query&prop=info&intoken=email&titles=User:$to")
     local token=$(__fetch "$response" "emailtoken" | sed "s/+/%2B/g")
     local trash=$(FORMAT=xml __post "action=emailuser&target=User:$to&subject=$subject&text=$text&token=$token")
+
     print "OK"
 }
 
 action_upload() {
-    echo "Upload"
+    print "Uploading files to wiki ... "
+
+    print "OK"
 }
 
 action_import() {
-    echo "Import"
+    print "Importing pages to wiki ... "
+
+    print "OK"
 }
 
 action_watch() {
