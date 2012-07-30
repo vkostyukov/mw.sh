@@ -5,6 +5,11 @@
 #
 # License: http://www.apache.org/licenses/LICENSE-2.0.html 
 # GitHub: https://github.com/vkostyukov/mw.sh
+#
+# TODO:
+# - remove DRY-brokes code blocks
+#
+
 
 MWSH_NAME="mw.sh"
 MWSH_VERSION="0.1"
