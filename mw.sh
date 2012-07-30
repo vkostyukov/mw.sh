@@ -83,7 +83,7 @@ action_help() {
     echo "    purge     Purges the cache for the given titles"
     echo "    delete    Deletes a page"
     echo "    move      Moves a page"
-    echo "    edit      Creates/edites a page"
+    echo "    edit      Creates/edits a page"
     echo "    upload    Uploads a file to MediaWiki"
     echo "    import    Imports data to MediaWiki"
     echo "    watch     Adds page to watchlist"
@@ -154,11 +154,29 @@ action_delete() {
 }
 
 action_move() {
-    echo "Move"
+    local from=$(__arg "$1" "from")
+    local to=$(__arg "$1" "to")
+
+    print "Moving page '$from' to '$to' ... "
+
+    local response=$(FORMAT=xml __post "action=query&prop=info&intoken=move&titles=$from")
+    local token=$(__fetch "$response" "movetoken" | sed "s/+/%2B/g")
+    local trash=$(FORMAT=xml __post "action=move&from=$from&to=$to&token=$token&movetalk=true&noredirect=true")
+
+    print "OK"
 }
 
 action_edit() {
-    echo "Edit"
+    local title=$(__arg "$1" "title")
+    local text=$(__arg "$1" "text")
+
+    print "Editing/Creating wiki page '$title' ... "
+
+    local response=$(FORMAT=xml __post "action=query&prop=info&intoken=edit&titles=$title")
+    local token=$(__fetch "$response" "edittoken" | sed "s/+/%2B/g")
+    local trash=$(FORMAT=xml __post "action=edit&title=$title&token=$token&text=$text")
+
+    print "OK"
 }
 
 action_upload() {
