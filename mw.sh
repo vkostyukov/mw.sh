@@ -142,7 +142,15 @@ action_purge() {
 }
 
 action_delete() {
-    echo "Delete"
+    local title=$(__arg "$1" "title")
+
+    print "Deleting wiki page '$title' ... "
+
+    local response=$(FORMAT=xml __post "action=query&prop=info&intoken=delete&titles=$title")
+    local token=$(__fetch "$response" "deletetoken" | sed "s/+/%2B/g")
+    local trash=$(FORMAT=xml __post "action=delete&title=$title&token=$token")
+
+    print "OK" 
 }
 
 action_move() {
