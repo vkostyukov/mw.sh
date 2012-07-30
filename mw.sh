@@ -84,6 +84,7 @@ action_help() {
     echo "    delete    Deletes a page"
     echo "    move      Moves a page"
     echo "    edit      Creates/edits a page"
+    echo "    email     Emails to user"
     echo "    upload    Uploads a file to MediaWiki"
     echo "    import    Imports data to MediaWiki"
     echo "    watch     Adds page to watchlist"
@@ -176,6 +177,19 @@ action_edit() {
     local token=$(__fetch "$response" "edittoken" | sed "s/+/%2B/g")
     local trash=$(FORMAT=xml __post "action=edit&title=$title&token=$token&text=$text")
 
+    print "OK"
+}
+
+action_email() {
+    local to=$(__arg "$1" "to")
+    local subject=$(__arg "$1" "subject")
+    local text=$(__arg "$1" "text")
+
+    print "Emailing to '$to' ... "
+
+    local response=$(FORMAT=xml __post "action=query&prop=info&intoken=email&titles=User:$to")
+    local token=$(__fetch "$response" "emailtoken" | sed "s/+/%2B/g")
+    local trash=$(FORMAT=xml __post "action=emailuser&target=User:$to&subject=$subject&text=$text&token=$token")
     print "OK"
 }
 
