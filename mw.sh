@@ -133,7 +133,12 @@ action_logout() {
 }
 
 action_purge() {
-    echo "Purge"
+    local titles=$(__arg "$1" "titles")
+    print "Purging wiki pages '$titles' ... "
+
+    local trash=$(FORMAT=xml __post "action=purge&titles=$titles")
+
+    print "OK"
 }
 
 action_delete() {
