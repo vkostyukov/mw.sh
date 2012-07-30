@@ -196,13 +196,13 @@ action_email() {
 
 action_upload() {
     print "Uploading files to wiki ... "
-
+    print "Please, contact author: he'll write this action for you."
     print "OK"
 }
 
 action_import() {
     print "Importing pages to wiki ... "
-
+    print "Please, contact author: he'll write this action for you."
     print "OK"
 }
 
