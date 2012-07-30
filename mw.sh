@@ -41,6 +41,11 @@ main() {
         . ~/$MWSH_CONFIG
     fi
 
+    if [ $# -eq 0 ] ; then 
+        action_help
+        exit 1
+    fi
+
     local action="$1" ; shift 
     local request=""
 
