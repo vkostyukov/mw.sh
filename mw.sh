@@ -23,7 +23,11 @@ RETURN=0
 
 print() {
     if ! $SILENT ; then
-        printf "%s" "$@"
+        if [ -z "$@" ] ; then 
+            printf "\n"
+        else 
+            printf "%s" "$@"
+        fi
     fi
 }
 
@@ -195,15 +199,15 @@ action_email() {
 }
 
 action_upload() {
-    print "Uploading files to wiki ... "
     print "Please, contact author: he'll write this action for you."
-    print "OK"
+    print
+    print "See details: http://www.mediawiki.org/wiki/API:Upload"
 }
 
 action_import() {
-    print "Importing pages to wiki ... "
     print "Please, contact author: he'll write this action for you."
-    print "OK"
+    print
+    print "See details: http://www.mediawiki.org/wiki/API:Import"
 }
 
 action_watch() {
