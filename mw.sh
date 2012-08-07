@@ -1,15 +1,18 @@
 #!/bin/bash
 
 # MediaWiki API client written in bash
-# Copyright 2012 Vladimir Kostyukov http://vkostyukov.ru
+# Copyright 2012 Vladimir Kostyukov (http://vkostyukov.ru)
 #
 # License: http://www.apache.org/licenses/LICENSE-2.0.html 
 # GitHub: https://github.com/vkostyukov/mw.sh
 #
-# TODO:
-# - remove DRY-brokes code blocks
+# Version: 0.2.0 (Aug 2012)
 #
-
+# TODO
+# - add help to each action
+# - write README.md file 
+# - improve double_checked_request routine 
+#
 
 MWSH_NAME="mw.sh"
 MWSH_VERSION="0.1"
@@ -165,11 +168,12 @@ action_delete() {
 
     print "Deleting wiki page '$title' ... "
 
-    local response=$(FORMAT=xml __post "action=query&prop=info&intoken=delete&titles=$title")
-    local token=$(__fetch "$response" "deletetoken" | sed "s/+/%2B/g")
-    local trash=$(FORMAT=xml __post "action=delete&title=$title&token=$token")
+    local req1="action=query&prop=info&intoken=delete&titles=$title"
+    local token="deletetoken"
+    local req2="action=delete&title=$title"
+    local success="delete"
 
-    print "OK" 
+    __double_checked_request "$req1" "$token" "$req2" "$success"
 }
 
 action_move() {
@@ -178,11 +182,12 @@ action_move() {
 
     print "Moving page '$from' to '$to' ... "
 
-    local response=$(FORMAT=xml __post "action=query&prop=info&intoken=move&titles=$from")
-    local token=$(__fetch "$response" "movetoken" | sed "s/+/%2B/g")
-    local trash=$(FORMAT=xml __post "action=move&from=$from&to=$to&token=$token&movetalk=true&noredirect=true")
+    local req1="action=query&prop=info&intoken=move&titles=$from"
+    local token="movetoken"
+    local req2="action=move&from=$from&to=$to&movetalk=true&noredirect=true"
+    local success="move"
 
-    print "OK"
+    __double_checked_request "$req1" "$token" "$req2" "$success"
 }
 
 action_edit() {
@@ -191,11 +196,12 @@ action_edit() {
 
     print "Editing/Creating wiki page '$title' ... "
 
-    local response=$(FORMAT=xml __post "action=query&prop=info&intoken=edit&titles=$title")
-    local token=$(__fetch "$response" "edittoken" | sed "s/+/%2B/g")
-    local trash=$(FORMAT=xml __post "action=edit&title=$title&token=$token&text=$text")
+    local req1="action=query&prop=info&intoken=edit&titles=$title"
+    local token="edittoken"
+    local req2="action=edit&title=$title&text=$text"
+    local success="Success"
 
-    print "OK"
+    __double_checked_request "$req1" "$token" "$req2" "$success"
 }
 
 action_email() {
@@ -205,11 +211,12 @@ action_email() {
 
     print "Emailing to '$to' ... "
 
-    local response=$(FORMAT=xml __post "action=query&prop=info&intoken=email&titles=User:$to")
-    local token=$(__fetch "$response" "emailtoken" | sed "s/+/%2B/g")
-    local trash=$(FORMAT=xml __post "action=emailuser&target=User:$to&subject=$subject&text=$text&token=$token")
+    local req1="action=query&prop=info&intoken=email&titles=User:$to"
+    local token="emailtoken"
+    local req2="action=emailuser&target=User:$to&subject=$subject&text=$text"
+    local success="Success"
 
-    print "OK"
+    __double_checked_request "$req1" "$token" "$req2" "$success"
 }
 
 action_upload() {
@@ -256,6 +263,7 @@ __double_checked_request() {
     local response=$(FORMAT=xml __post "$1")
     local token=$(__fetch "$response" "$2" | sed "s/+/%2B/g")
 
+    # correct err pattern (2 forms)
     if [ -z "$token" ] ; then
         local message=$(echo "$response" | sed 's/.*<info[^>]*>//;s/<\/info>.*//' )
         print "ERR"
@@ -267,8 +275,8 @@ __double_checked_request() {
             local info=$(__fetch "$trash" "info")
             print
             print "DETAILS: $info"
-        else 
-            print "OK" 
+        else
+            print "OK"
         fi
     fi
 }
