@@ -257,13 +257,12 @@ __double_checked_request() {
     local response=$(FORMAT=xml __post "$1")
     local token=$(__fetch "$response" "$2" | sed "s/+/%2B/g")
 
-    # correct err pattern (2 formats)
     if [ -z "$token" ] ; then
         local message=$(echo "$response" | sed 's/.*<info[^>]*>//;s/<\/info>.*//' )
         print "ERR"
         print "$message"
     else 
-        local trash=$(FORMAT=xml __post "$3&token=$token2")
+        local trash=$(FORMAT=xml __post "$3&token=$token")
         local error=$(echo "$trash" | egrep -o "<error[^>]*>")
 
         if [ -z "$error" ] ; then
