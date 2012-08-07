@@ -263,8 +263,8 @@ __double_checked_request() {
         print "ERR"
         print "$message"
     else 
-        local trash=$(FORMAT=xml __post "$3&token=$token")
-        local error=$(echo "$trash" | sed 's/.*<error //;s/\/>.*//')
+        local trash=$(FORMAT=xml __post "$3&token=$token2")
+        local error=$(echo "$trash" | egrep -o "<error[^>]*>")
 
         if [ -z "$error" ] ; then
             print OK
