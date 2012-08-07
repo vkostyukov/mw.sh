@@ -171,9 +171,8 @@ action_delete() {
     local req1="action=query&prop=info&intoken=delete&titles=$title"
     local token="deletetoken"
     local req2="action=delete&title=$title"
-    local success="delete"
 
-    __double_checked_request "$req1" "$token" "$req2" "$success"
+    __double_checked_request "$req1" "$token" "$req2"
 }
 
 action_move() {
@@ -185,9 +184,8 @@ action_move() {
     local req1="action=query&prop=info&intoken=move&titles=$from"
     local token="movetoken"
     local req2="action=move&from=$from&to=$to&movetalk=true&noredirect=true"
-    local success="move"
 
-    __double_checked_request "$req1" "$token" "$req2" "$success"
+    __double_checked_request "$req1" "$token" "$req2"
 }
 
 action_edit() {
@@ -199,9 +197,8 @@ action_edit() {
     local req1="action=query&prop=info&intoken=edit&titles=$title"
     local token="edittoken"
     local req2="action=edit&title=$title&text=$text"
-    local success="Success"
 
-    __double_checked_request "$req1" "$token" "$req2" "$success"
+    __double_checked_request "$req1" "$token" "$req2"
 }
 
 action_email() {
@@ -214,9 +211,8 @@ action_email() {
     local req1="action=query&prop=info&intoken=email&titles=User:$to"
     local token="emailtoken"
     local req2="action=emailuser&target=User:$to&subject=$subject&text=$text"
-    local success="Success"
-
-    __double_checked_request "$req1" "$token" "$req2" "$success"
+    
+    __double_checked_request "$req1" "$token" "$req2"
 }
 
 action_upload() {
@@ -239,9 +235,8 @@ action_watch() {
     local req1="action=query&prop=info&intoken=watch&titles=$title"
     local token="watchtoken"
     local req2="action=watch&title=$title"
-    local success="watched"
 
-    __double_checked_request "$req1" "$token" "$req2" "$success"
+    __double_checked_request "$req1" "$token" "$req2"
 }
 
 action_unwatch() {
@@ -252,9 +247,8 @@ action_unwatch() {
     local req1="action=query&prop=info&intoken=watch&titles=$title"
     local token="watchtoken"
     local req2="action=watch&title=$title&unwatch=true"
-    local success="unwatched"
 
-    __double_checked_request "$req1" "$token" "$req2" "$success"
+    __double_checked_request "$req1" "$token" "$req2"
 }
 
 # routines
@@ -263,20 +257,23 @@ __double_checked_request() {
     local response=$(FORMAT=xml __post "$1")
     local token=$(__fetch "$response" "$2" | sed "s/+/%2B/g")
 
-    # correct err pattern (2 forms)
+    # correct err pattern (2 formats)
     if [ -z "$token" ] ; then
         local message=$(echo "$response" | sed 's/.*<info[^>]*>//;s/<\/info>.*//' )
         print "ERR"
         print "$message"
     else 
         local trash=$(FORMAT=xml __post "$3&token=$token")
-        if [ -z $(echo "$trash" | grep -o "$4") ] ; then
-            print "ERR"
-            local info=$(__fetch "$trash" "info")
-            print
-            print "DETAILS: $info"
+        local error=$(echo "$trash" | sed 's/.*<error //;s/\/>.*//')
+
+        if [ -z "$error" ] ; then
+            print OK
         else
-            print "OK"
+            print "ERR"
+            local info=$(__fetch "$error" "info")
+            local code=$(__fetch "$error" "code")
+            print
+            print "DETAILS [$code]: $info"
         fi
     fi
 }
