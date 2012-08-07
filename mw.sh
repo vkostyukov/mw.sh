@@ -22,9 +22,7 @@ USER=
 PASSWD=
 SILENT=false
 FORMAT=json
-
-DATA=
-RETURN=0
+METHOD=get
 
 print() {
     if ! $SILENT ; then
@@ -37,7 +35,7 @@ print() {
 }
 
 main() {
-    if [[ -f ~/$MWSH_CONFIG ]]; then
+    if [[ -f ~/$MWSH_CONFIG ]] ; then
         . ~/$MWSH_CONFIG
     fi
 
@@ -57,6 +55,7 @@ main() {
             --passwd=*) PASSWD=${1#*=} ;;
             --format=*) FORMAT=${1#*=} ;;
             --silent) SILENT=true ;;
+            --method=*) METHOD=${1#*=} ;;
             --*=*)
                 local param=${1#--*}
                 request="$request&$param"
@@ -70,8 +69,13 @@ main() {
         action_"$action" "$request"
     else
         print "Performing custom request 'action=$action$request'... "
-        local data=$(__get "action=$action$request")
-        echo "$data"
+        if [ "$METHOD" == "get" ] ; then 
+            __get "action=$action$request"
+        elif [ "$METHOD" == "post" ] ; then 
+            __post "action=$action$request"
+        else 
+            print "Error: unknown method '$METHOD'."
+        fi
     fi
 }
 
@@ -225,27 +229,49 @@ action_watch() {
 
     print "Watching wiki page '$title' ... "
 
-    local response=$(FORMAT=xml __post "action=query&prop=info&intoken=watch&titles=$title")
-    local token=$(__fetch "$response" "watchtoken" | sed "s/+/%2B/g")
-    local trash=$(FORMAT=xml __post "action=watch&title=$title&token=$token")
+    local req1="action=query&prop=info&intoken=watch&titles=$title"
+    local token="watchtoken"
+    local req2="action=watch&title=$title"
+    local success="watched"
 
-    print "OK" 
+    __double_checked_request "$req1" "$token" "$req2" "$success"
 }
 
-# DRY broken
 action_unwatch() {
     local title=$(__arg "$1" "title")
 
     print "Unwatching wiki page '$title' ... "
 
-    local response=$(FORMAT=xml __post "action=query&prop=info&intoken=watch&titles=$title")
-    local token=$(__fetch "$response" "watchtoken" | sed "s/+/%2B/g")
-    local trash=$(FORMAT=xml __post "action=watch&title=$title&unwatch=true&token=$token")
+    local req1="action=query&prop=info&intoken=watch&titles=$title"
+    local token="watchtoken"
+    local req2="action=watch&title=$title&unwatch=true"
+    local success="unwatched"
 
-    print "OK" 
+    __double_checked_request "$req1" "$token" "$req2" "$success"
 }
 
 # routines
+
+__double_checked_request() {
+    local response=$(FORMAT=xml __post "$1")
+    local token=$(__fetch "$response" "$2" | sed "s/+/%2B/g")
+
+    if [ -z "$token" ] ; then
+        local message=$(echo "$response" | sed 's/.*<info[^>]*>//;s/<\/info>.*//' )
+        print "ERR"
+        print "$message"
+    else 
+        local trash=$(FORMAT=xml __post "$3&token=$token")
+        if [ -z $(echo "$trash" | grep -o "$4") ] ; then
+            print "ERR"
+            local info=$(__fetch "$trash" "info")
+            print
+            print "DETAILS: $info"
+        else 
+            print "OK" 
+        fi
+    fi
+}
 
 __get() {
     local result=`curl -s "$API?$1&format=$FORMAT"`
@@ -258,7 +284,7 @@ __post() {
 }
 
 __fetch() {
-    echo "$1" | egrep -o "$2=[^ ]*" | sed "s/\"//g" | sed "s/$2=//"
+    echo "$1" | egrep -o "$2=\"[^\"]*\"" | sed "s/\"//g" | sed "s/$2=//"
 }
 
 __arg() {
